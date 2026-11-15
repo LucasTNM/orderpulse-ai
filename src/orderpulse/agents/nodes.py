@@ -8,6 +8,7 @@ from typing import Any, Callable, Optional
 from orderpulse.agents.router_guardrail import IntentRouterGuardrail
 from orderpulse.config import Settings, get_settings
 from orderpulse.mcp.server import OrderPulseMCPServer
+from orderpulse.observability.langfuse_tracer import observe
 from orderpulse.rag.hybrid_retriever import HybridPolicyRetriever
 from orderpulse.schemas.models import (
     AgentGraphState,
@@ -44,6 +45,7 @@ class OrderPulseNodes:
         self.retriever = retriever or HybridPolicyRetriever(settings=self.settings)
         self.mcp_server = mcp_server or OrderPulseMCPServer()
 
+    @observe(name="triage_guardrail_node")
     def triage_guardrail_node(
         self,
         state: AgentGraphState,
@@ -115,6 +117,7 @@ class OrderPulseNodes:
             )
         return state
 
+    @observe(name="policy_agent_node")
     def policy_agent_node(
         self,
         state: AgentGraphState,
@@ -163,6 +166,7 @@ class OrderPulseNodes:
             )
         return state
 
+    @observe(name="operational_agent_node")
     def operational_agent_node(
         self,
         state: AgentGraphState,
@@ -216,6 +220,7 @@ class OrderPulseNodes:
             )
         return state
 
+    @observe(name="judge_validator_node")
     def judge_validator_node(
         self,
         state: AgentGraphState,

@@ -67,6 +67,18 @@ _STOPWORDS: frozenset[str] = frozenset(
         "muito",
         "mais",
         "sobre",
+        "chegou",
+        "alem",
+        "ficou",
+        "teve",
+        "tinha",
+        "estava",
+        "esse",
+        "este",
+        "essa",
+        "agora",
+        "hoje",
+        "aqui",
         "the",
         "is",
         "are",
@@ -91,7 +103,8 @@ _CONCEPT_MAP: dict[str, str] = {
     "demorando": "concept_delay",
     "demorou": "concept_delay",
     "tarde": "concept_delay",
-    "prazo": "concept_sla",
+    "passou": "concept_delay",
+    "prazo": "concept_delay",
     "sla": "concept_sla",
     "eta": "concept_sla",
     "reembolso": "concept_refund",
@@ -191,18 +204,21 @@ class DeterministicSemanticEmbedder:
                 vec[idx] += sign * 4.0
 
         meaningful: list[str] = []
+        seen_concepts: set[str] = set()
         for tok in raw_tokens:
             if tok in _STOPWORDS:
                 continue
             concept = _CONCEPT_MAP.get(tok)
             if concept is not None:
                 meaningful.append(concept)
-                idx, sign = _hash_feature(f"cpt:{concept}", self.dims)
-                vec[idx] += sign * 3.0
+                if concept not in seen_concepts:
+                    seen_concepts.add(concept)
+                    idx, sign = _hash_feature(f"cpt:{concept}", self.dims)
+                    vec[idx] += sign * 4.5
             else:
                 stem = tok[:5] if len(tok) > 5 and not tok.isdigit() else tok
                 meaningful.append(stem)
-                weight = 2.6 if tok.isdigit() else 1.5
+                weight = 2.0 if tok.isdigit() else 1.1
                 idx, sign = _hash_feature(f"tok:{stem}", self.dims)
                 vec[idx] += sign * weight
 
@@ -211,12 +227,12 @@ class DeterministicSemanticEmbedder:
                     for i in range(len(tok) - 3):
                         sub = tok[i : i + 4]
                         s_idx, s_sign = _hash_feature(f"chr:{sub}", self.dims)
-                        vec[s_idx] += s_sign * 0.35
+                        vec[s_idx] += s_sign * 0.20
 
         # Bigrams of canonicalized concepts capture phrasing intent.
         for a, b in zip(meaningful, meaningful[1:]):
             idx, sign = _hash_feature(f"bi:{a}|{b}", self.dims)
-            vec[idx] += sign * 1.4
+            vec[idx] += sign * 0.25
 
         l2 = float(np.linalg.norm(vec))
         if l2 > 0.0:
