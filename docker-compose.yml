@@ -1,0 +1,76 @@
+services:
+  orderpulse-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: orderpulse-api
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: production
+      REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
+      POSTGRES_DSN: postgresql+asyncpg://orderpulse:orderpulse@postgres:5432/orderpulse_ops
+      LANGFUSE_HOST: http://langfuse:3000
+      SEMANTIC_CACHE_ENABLED: "true"
+      SEMANTIC_CACHE_THRESHOLD: "0.95"
+      SEMANTIC_CACHE_TTL_SECONDS: "86400"
+      HITL_REFUND_THRESHOLD_BRL: "150.00"
+      SQL_READONLY_ENFORCED: "true"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: orderpulse-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: orderpulse-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: orderpulse-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-orderpulse}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-orderpulse}
+      POSTGRES_DB: ${POSTGRES_DB:-orderpulse_ops}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./infra/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orderpulse -d orderpulse_ops"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  langfuse:
+    image: langfuse/langfuse:2
+    container_name: orderpulse-langfuse
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-orderpulse}:${POSTGRES_PASSWORD:-orderpulse}@postgres:5432/${POSTGRES_DB:-orderpulse_ops}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-orderpulse-local-nextauth-secret}
+      SALT: ${LANGFUSE_SALT:-orderpulse-local-salt}
+      NEXTAUTH_URL: http://localhost:3000
+      TELEMETRY_ENABLED: "false"
