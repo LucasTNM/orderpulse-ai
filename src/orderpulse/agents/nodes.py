@@ -128,15 +128,11 @@ class OrderPulseNodes:
         triage = state.triage
         enriched_query = state.request.query
         if triage is not None:
-            hints: list[str] = [triage.intent.value]
+            hints: list[str] = []
             if triage.claimed_amount_brl and triage.claimed_amount_brl > self.settings.hitl_refund_threshold_brl:
                 hints.append("POL-FIN-150 alcada financeira 150 aprovacao humana HITL")
-            if triage.intent in {
-                IntentCategory.DELIVERY_DELAY_DISPUTE,
-                IntentCategory.REFUND_REQUEST,
-            }:
-                hints.append("atraso SLA reembolso voucher abuso 30 dias")
-            enriched_query = f"{state.request.query} {' '.join(hints)}"
+            if hints:
+                enriched_query = f"{state.request.query} {' '.join(hints)}"
 
         top_chunks, initial_count = self.retriever.retrieve(enriched_query)
         state.retrieved_policies = top_chunks
@@ -496,6 +492,11 @@ class OrderPulseNodes:
         if record and record.prior_refunds_30d >= abuse_limit:
             if "POL-ABU-009" not in citations:
                 citations.append("POL-ABU-009")
+            # Corrective RAG: ensure triggered antifraud policy chunk is grounded in context
+            if all(c.policy_id != "POL-ABU-009" for c in state.retrieved_policies):
+                extra, _ = self.retriever.retrieve("POL-ABU-009 abuso recorrente 4 reembolsos 30 dias", top_k_final=1)
+                if extra:
+                    state.retrieved_policies = (extra + state.retrieved_policies)[: self.settings.rag_top_k_reranked]
             if record.missing_items_reported:
                 state.draft_decision = ResolutionDecision.ESCALATED_HITL
                 state.draft_refund_brl = round(record.missing_items_value_brl, 2)
@@ -518,6 +519,11 @@ class OrderPulseNodes:
         if state.draft_refund_brl > threshold:
             if "POL-FIN-004" not in citations:
                 citations.append("POL-FIN-004")
+            # Corrective RAG: ensure POL-FIN-004 (POL-FIN-150) is grounded in retrieved context
+            if all(c.policy_id != "POL-FIN-004" for c in state.retrieved_policies):
+                extra, _ = self.retriever.retrieve("POL-FIN-150 alcada financeira 150 aprovacao humana HITL", top_k_final=1)
+                if extra:
+                    state.retrieved_policies = (extra + state.retrieved_policies)[: self.settings.rag_top_k_reranked]
             state.draft_decision = ResolutionDecision.ESCALATED_HITL
             state.draft_citations = citations
             order_ref = record.order_id if record else "solicitado"
