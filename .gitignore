@@ -1,0 +1,82 @@
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Tests & QA artifacts (never commit test files or test caches)
+tests/
+test/
+test_*.py
+*_test.py
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+pytestdebug.log
+
+# Python Bytecode & Build Artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Logs, Local DBs & Temporary Junk
+*.log
+logs/
+tmp/
+temp/
+scratch/
+*.tmp
+*.bak
+*.swp
+*.swo
+*.orig
+*.db
+*.sqlite
+*.sqlite3
+
+# Tooling Caches & IDEs
+.ruff_cache/
+.mypy_cache/
+.pytype/
+.cache/
+.idea/
+.vscode/
+*.iml
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini

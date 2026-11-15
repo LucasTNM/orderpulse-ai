@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=69.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orderpulse-ai"
+version = "1.0.0"
+description = "100% Code-First Multi-Agent Decision Engine for Real-Time Delivery Triage with LangGraph, Hybrid RAG + Reranking, Redis Semantic Cache, MCP Read-Only SQL, Langfuse, and RAGAS."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "LucasTNM", email = "lucasstma01@gmail.com" },
+]
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.10.0",
+    "langgraph>=0.2.50",
+    "qdrant-client>=1.12.0",
+    "rank-bm25>=0.2.2",
+    "flashrank>=0.2.9",
+    "redis>=5.2.0",
+    "sqlalchemy>=2.0.36",
+    "asyncpg>=0.30.0",
+    "mcp>=1.2.0",
+    "langfuse>=2.55.0",
+    "ragas>=0.2.6",
+    "httpx>=0.28.0",
+    "numpy>=2.0.0",
+    "python-dotenv>=1.0.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
